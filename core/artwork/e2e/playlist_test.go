@@ -118,9 +118,9 @@ var _ = Describe("Playlist artwork resolution", func() {
 		//     ├── 01 - Track.mp3
 		//     └── cover.png          (real PNG — wins as tile 2 source)
 		// Playlist "pl-7" references tracks from both albums, so the reader
-		// generates a 2x2 tiled cover from 2 distinct album art tiles (the
-		// tiled generator mirrors when it has fewer than 4 unique tiles).
-		It("generates a tiled cover from album art", func() {
+		// generates a styled cover using the albums' art as the overlapping
+		// circular covers.
+		It("generates a styled cover from album art", func() {
 			conf.Server.CoverArtPriority = "cover.*"
 			setLayout(fstest.MapFS{
 				"Artist/AlbumA/01 - Track.mp3": trackFile(1, "TA", map[string]any{"album": "AlbumA"}),
@@ -140,8 +140,8 @@ var _ = Describe("Playlist artwork resolution", func() {
 			Expect(ds.Playlist(ctx).Put(&pl)).To(Succeed())
 
 			data := readArtwork(pl.CoverArtID())
-			// The tiled cover is a PNG-encoded 600x600 image (tileSize const).
-			// Exact bytes vary (random album order), so assert format + non-trivial size.
+			// The styled cover is a PNG-encoded image. Exact bytes vary (random
+			// album order), so assert format + non-trivial size.
 			Expect(data[:8]).To(Equal([]byte{0x89, 'P', 'N', 'G', 0x0d, 0x0a, 0x1a, 0x0a}))
 			Expect(len(data)).To(BeNumerically(">", 1000))
 		})

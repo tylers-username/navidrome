@@ -27,8 +27,6 @@ type playlistArtworkReader struct {
 	pl model.Playlist
 }
 
-const tileSize = 600
-
 func newPlaylistArtworkReader(ctx context.Context, artwork *artwork, artID model.ArtworkID) (*playlistArtworkReader, error) {
 	pl, err := artwork.ds.Playlist(ctx).Get(artID.ID)
 	if err != nil {
@@ -70,7 +68,7 @@ func (a *playlistArtworkReader) Reader(ctx context.Context) (io.ReadCloser, stri
 		a.fromPlaylistUploadedImage(),
 		a.fromPlaylistSidecar(ctx),
 		a.fromPlaylistExternalImage(ctx),
-		a.fromGeneratedTiledCover(ctx),
+		a.fromStyledCover(ctx),
 		fromAlbumPlaceholder(),
 	)
 }
@@ -143,15 +141,66 @@ func findPlaylistSidecarPath(ctx context.Context, plsPath string) string {
 	return ""
 }
 
-func (a *playlistArtworkReader) fromGeneratedTiledCover(ctx context.Context) sourceFunc {
+// styleForPlaylist maps a playlist to its generated-cover style (label + palette).
+// Every playlist gets a styled cover; this is also the extension point for future
+// generated types (e.g. a plugin "radio").
+func styleForPlaylist(pl model.Playlist) coverStyle {
+	if pl.IsSmartPlaylist() {
+		return coverStyle{Label: "SMART LIST", BG: paletteBlue}
+	}
+	return coverStyle{Label: "PLAYLIST", BG: paletteCoral}
+}
+
+// fromStyledCover renders the Spotify-"Radio"-style cover: coloured background,
+// type label, overlapping circular album covers, and an auto-fitted title.
+func (a *playlistArtworkReader) fromStyledCover(ctx context.Context) sourceFunc {
 	return func() (io.ReadCloser, string, error) {
-		tiles, err := a.loadTiles(ctx)
+		covers, err := a.loadAlbumCovers(ctx)
 		if err != nil {
 			return nil, "", err
 		}
-		r, err := a.createTiledImage(ctx, tiles)
-		return r, "", err
+		img, err := generatePlaylistCover(coverOptions{
+			Title:  a.pl.Name,
+			Style:  styleForPlaylist(a.pl),
+			Covers: covers,
+		})
+		if err != nil {
+			return nil, "", err
+		}
+		buf := new(bytes.Buffer)
+		if err = png.Encode(buf, img); err != nil {
+			return nil, "", err
+		}
+		return io.NopCloser(buf), "", nil
 	}
+}
+
+// loadAlbumCovers loads up to 3 decoded album covers from the playlist's tracks,
+// for use as the overlapping circles in the styled cover.
+func (a *playlistArtworkReader) loadAlbumCovers(ctx context.Context) ([]image.Image, error) {
+	tracksRepo := a.a.ds.Playlist(ctx).Tracks(a.pl.ID, false)
+	albumIds, err := tracksRepo.GetAlbumIDs(model.QueryOptions{Max: 3, Sort: "random()"})
+	if err != nil {
+		log.Error(ctx, "Error getting album IDs for playlist", "id", a.pl.ID, "name", a.pl.Name, err)
+		return nil, err
+	}
+
+	var covers []image.Image
+	for _, id := range toAlbumArtworkIDs(albumIds) {
+		r, _, err := fromAlbum(ctx, a.a, id)()
+		if err != nil {
+			continue
+		}
+		img, _, err := image.Decode(r)
+		_ = r.Close()
+		if err == nil {
+			covers = append(covers, img)
+		}
+	}
+	if len(covers) == 0 {
+		return nil, errors.New("could not find any eligible cover")
+	}
+	return covers, nil
 }
 
 func toAlbumArtworkIDs(albumIDs []string) []model.ArtworkID {
@@ -159,84 +208,6 @@ func toAlbumArtworkIDs(albumIDs []string) []model.ArtworkID {
 		al := model.Album{ID: id}
 		return al.CoverArtID()
 	})
-}
-
-func (a *playlistArtworkReader) loadTiles(ctx context.Context) ([]image.Image, error) {
-	tracksRepo := a.a.ds.Playlist(ctx).Tracks(a.pl.ID, false)
-	albumIds, err := tracksRepo.GetAlbumIDs(model.QueryOptions{Max: 4, Sort: "random()"})
-	if err != nil {
-		log.Error(ctx, "Error getting album IDs for playlist", "id", a.pl.ID, "name", a.pl.Name, err)
-		return nil, err
-	}
-	ids := toAlbumArtworkIDs(albumIds)
-
-	var tiles []image.Image
-	for _, id := range ids {
-		r, _, err := fromAlbum(ctx, a.a, id)()
-		if err == nil {
-			tile, err := a.createTile(ctx, r)
-			if err == nil {
-				tiles = append(tiles, tile)
-			}
-			_ = r.Close()
-		}
-		if len(tiles) == 4 {
-			break
-		}
-	}
-	switch len(tiles) {
-	case 0:
-		return nil, errors.New("could not find any eligible cover")
-	case 2:
-		tiles = append(tiles, tiles[1], tiles[0])
-	case 3:
-		tiles = append(tiles, tiles[0])
-	}
-	return tiles, nil
-}
-
-func (a *playlistArtworkReader) createTile(_ context.Context, r io.ReadCloser) (image.Image, error) {
-	img, _, err := image.Decode(r)
-	if err != nil {
-		return nil, err
-	}
-	return fillCenter(img, tileSize/2, tileSize/2), nil
-}
-
-func (a *playlistArtworkReader) createTiledImage(_ context.Context, tiles []image.Image) (io.ReadCloser, error) {
-	buf := new(bytes.Buffer)
-	var rgba draw.Image
-	var err error
-	if len(tiles) == 4 {
-		rgba = image.NewRGBA(image.Rectangle{Max: image.Point{X: tileSize - 1, Y: tileSize - 1}})
-		draw.Draw(rgba, rect(0), tiles[0], image.Point{}, draw.Src)
-		draw.Draw(rgba, rect(1), tiles[1], image.Point{}, draw.Src)
-		draw.Draw(rgba, rect(2), tiles[2], image.Point{}, draw.Src)
-		draw.Draw(rgba, rect(3), tiles[3], image.Point{}, draw.Src)
-		err = png.Encode(buf, rgba)
-	} else {
-		err = png.Encode(buf, tiles[0])
-	}
-	if err != nil {
-		return nil, err
-	}
-	return io.NopCloser(buf), nil
-}
-
-func rect(pos int) image.Rectangle {
-	r := image.Rectangle{}
-	switch pos {
-	case 1:
-		r.Min.X = tileSize / 2
-	case 2:
-		r.Min.Y = tileSize / 2
-	case 3:
-		r.Min.X = tileSize / 2
-		r.Min.Y = tileSize / 2
-	}
-	r.Max.X = r.Min.X + tileSize/2
-	r.Max.Y = r.Min.Y + tileSize/2
-	return r
 }
 
 // fillCenter crops the source image from the center and scales it to fill dstW x dstH exactly,
