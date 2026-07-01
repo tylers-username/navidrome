@@ -133,13 +133,14 @@ func NewArtistRepository(ctx context.Context, db dbx.Builder) model.ArtistReposi
 	r.indexGroups = utils.ParseIndexGroups(conf.Server.IndexGroups)
 	r.tableName = "artist" // To be used by the idFilter below
 	r.registerModel(&model.Artist{}, map[string]filterFunc{
-		"id":         idFilter(r.tableName),
-		"name":       fullTextFilter(r.tableName, "mbz_artist_id"),
-		"starred":    annotationBoolFilter("starred"),
-		"has_rating": annotationBoolFilter("rating"),
-		"role":       roleFilter,
-		"missing":    booleanFilter,
-		"library_id": artistLibraryIdFilter,
+		"id":              idFilter(r.tableName),
+		"name":            fullTextFilter(r.tableName, "mbz_artist_id"),
+		"starred":         annotationBoolFilter("starred"),
+		"recently_played": recentlyPlayedFilter,
+		"has_rating":      annotationBoolFilter("rating"),
+		"role":            roleFilter,
+		"missing":         booleanFilter,
+		"library_id":      artistLibraryIdFilter,
 	})
 	r.setSortMappings(map[string]string{ //nolint:gosec
 		"name":        "order_artist_name",

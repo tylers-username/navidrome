@@ -24,6 +24,7 @@ import library from './library'
 import plugin from './plugin'
 import { Player } from './audioplayer'
 import customRoutes from './routes'
+import Home from './home'
 import {
   libraryReducer,
   themeReducer,
@@ -119,6 +120,7 @@ const Admin = (props) => {
       customRoutes={customRoutes}
       history={history}
       layout={Layout}
+      dashboard={Home}
       loginPage={Login}
       logoutButton={Logout}
       {...props}

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/Masterminds/squirrel"
 	"github.com/deluan/rest"
@@ -551,6 +552,43 @@ var _ = Describe("ArtistRepository", func() {
 						Expect(a.ID).ToNot(Equal(artistWithoutAnnotation.ID))
 					}
 				})
+			})
+		})
+
+		Describe("recently_played filter", func() {
+			var playedArtist model.Artist
+
+			BeforeEach(func() {
+				// Use a throwaway artist fixture rather than mutating seed data, so the play
+				// count registered here doesn't leak into other specs in the suite.
+				playedArtist = model.Artist{ID: "recently-played-artist", Name: "Recently Played Artist"}
+				err := createArtistWithLibrary(repo, &playedArtist, 1)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(repo.IncPlayCount(playedArtist.ID, time.Now())).To(Succeed())
+			})
+
+			AfterEach(func() {
+				if raw, ok := repo.(*artistRepository); ok {
+					_, _ = raw.executeSQL(squirrel.Delete(raw.tableName).Where(squirrel.Eq{"id": playedArtist.ID}))
+				}
+			})
+
+			It("returns only artists with at least one play", func() {
+				// Go through the REST filter map (not a direct call to recentlyPlayedFilter) so this
+				// test actually exercises the "recently_played" filter registration for artists.
+				res, err := repo.(model.ResourceRepository).ReadAll(rest.QueryOptions{
+					Sort:    "play_date",
+					Order:   "desc",
+					Filters: map[string]any{"recently_played": "true"},
+				})
+				Expect(err).ToNot(HaveOccurred())
+				played := res.(model.Artists)
+				ids := make([]string, 0, len(played))
+				for _, ar := range played {
+					ids = append(ids, ar.ID)
+					Expect(ar.PlayCount).To(BeNumerically(">", 0))
+				}
+				Expect(ids).To(ContainElement(playedArtist.ID))
 			})
 		})
 

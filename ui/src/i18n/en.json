@@ -614,6 +614,7 @@
     "settings": "Settings",
     "version": "Version",
     "theme": "Theme",
+    "home": "Home",
     "personal": {
       "name": "Personal",
       "options": {
@@ -637,6 +638,19 @@
     "playlists": "Playlists",
     "sharedPlaylists": "Shared Playlists",
     "about": "About"
+  },
+  "home": {
+    "showAll": "Show all",
+    "typeArtist": "Artist",
+    "recentlyAdded": "Recently Added",
+    "recentlyPlayed": "Recently Played",
+    "favoriteArtists": "Favorite artists",
+    "favoriteAlbums": "Favorite albums",
+    "favoriteSongs": "Favorite songs",
+    "mostPlayed": "Most played",
+    "recentArtists": "Recent artists",
+    "recentSongs": "Recent songs",
+    "recentPlaylists": "Recent playlists"
   },
   "player": {
     "playListsText": "Play Queue",
