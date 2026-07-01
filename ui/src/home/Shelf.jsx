@@ -41,8 +41,7 @@ export const Shelf = ({
     filter,
   )
 
-  if (!loaded) return null
-  if (!ids || ids.length === 0) return null
+  if (!loaded || !ids || ids.length === 0) return null
 
   return (
     <div className={classes.root}>

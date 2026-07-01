@@ -27,14 +27,16 @@ vi.mock('react-admin', () => ({
 }))
 
 describe('Home', () => {
-  it('renders all seven shelves in order when favourites are enabled', () => {
+  it('renders all shelves in order with favourites and most-played on top', () => {
     render(<Home />)
     const titles = screen.getAllByTestId('shelf').map((n) => n.textContent)
     expect(titles).toEqual([
+      'Favorite artists',
+      'Favorite albums',
+      'Favorite songs',
+      'Most played',
       'Recently Added',
       'Recently Played',
-      'Your favorite artists',
-      'Your favorite albums',
       'Recent artists',
       'Recent songs',
       'Recent playlists',
@@ -47,6 +49,18 @@ describe('Home', () => {
     const byTitle = Object.fromEntries(shelfProps.map((p) => [p.title, p]))
     expect(byTitle['Recently Added'].resource).toBe('album')
     expect(byTitle['Recently Added'].showAllLink).toBe('/album/recentlyAdded')
+    expect(byTitle['Favorite songs'].resource).toBe('song')
+    expect(byTitle['Favorite songs'].filter).toEqual({ starred: true })
+    expect(byTitle['Favorite songs'].sort).toEqual({
+      field: 'starred_at',
+      order: 'DESC',
+    })
+    expect(byTitle['Most played'].resource).toBe('album')
+    expect(byTitle['Most played'].showAllLink).toBe('/album/mostPlayed')
+    expect(byTitle['Most played'].sort).toEqual({
+      field: 'play_count',
+      order: 'DESC',
+    })
     expect(byTitle['Recent songs'].resource).toBe('song')
     expect(byTitle['Recent songs'].filter).toEqual({ recently_played: true })
     expect(byTitle['Recent artists'].resource).toBe('artist')

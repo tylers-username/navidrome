@@ -644,8 +644,10 @@
     "typeArtist": "Artist",
     "recentlyAdded": "Recently Added",
     "recentlyPlayed": "Recently Played",
-    "favoriteArtists": "Your favorite artists",
-    "favoriteAlbums": "Your favorite albums",
+    "favoriteArtists": "Favorite artists",
+    "favoriteAlbums": "Favorite albums",
+    "favoriteSongs": "Favorite songs",
+    "mostPlayed": "Most played",
     "recentArtists": "Recent artists",
     "recentSongs": "Recent songs",
     "recentPlaylists": "Recent playlists"
