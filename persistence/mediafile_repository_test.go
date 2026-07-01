@@ -1077,4 +1077,35 @@ var _ = Describe("MediaRepository", func() {
 			_ = mr.Delete(newID)
 		})
 	})
+
+	Describe("recently_played filter", func() {
+		var repo model.MediaFileRepository
+		var playedID string
+
+		BeforeEach(func() {
+			ctx := request.WithUser(log.NewContext(context.TODO()), model.User{ID: "userid", UserName: "johndoe"})
+			repo = NewMediaFileRepository(ctx, GetDBXBuilder())
+			// Song id "1001" exists in the seed data; register a play for this user.
+			playedID = "1001"
+			Expect(repo.IncPlayCount(playedID, time.Now())).To(Succeed())
+		})
+
+		It("returns only songs with at least one play", func() {
+			// Go through the REST filter map (not a direct call to recentlyPlayedFilter) so this
+			// test actually exercises the "recently_played" filter registration in mediaFileFilter().
+			res, err := repo.(model.ResourceRepository).ReadAll(rest.QueryOptions{
+				Sort:    "play_date",
+				Order:   "desc",
+				Filters: map[string]any{"recently_played": "true"},
+			})
+			Expect(err).ToNot(HaveOccurred())
+			played := res.(model.MediaFiles)
+			ids := make([]string, 0, len(played))
+			for _, mf := range played {
+				ids = append(ids, mf.ID)
+				Expect(mf.PlayCount).To(BeNumerically(">", 0))
+			}
+			Expect(ids).To(ContainElement(playedID))
+		})
+	})
 })
