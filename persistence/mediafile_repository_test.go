@@ -1079,21 +1079,24 @@ var _ = Describe("MediaRepository", func() {
 	})
 
 	Describe("recently_played filter", func() {
-		var repo model.MediaFileRepository
-		var playedID string
+		var playedMediaFile model.MediaFile
 
 		BeforeEach(func() {
-			ctx := request.WithUser(log.NewContext(context.TODO()), model.User{ID: "userid", UserName: "johndoe"})
-			repo = NewMediaFileRepository(ctx, GetDBXBuilder())
-			// Song id "1001" exists in the seed data; register a play for this user.
-			playedID = "1001"
-			Expect(repo.IncPlayCount(playedID, time.Now())).To(Succeed())
+			// Use a throwaway media_file fixture rather than mutating seed data, so the play
+			// count registered here doesn't leak into other specs in the suite.
+			playedMediaFile = model.MediaFile{ID: "recently-played-mediafile", LibraryID: 1, Path: "test/recently-played.mp3", Title: "Recently Played"}
+			Expect(mr.Put(&playedMediaFile)).To(Succeed())
+			Expect(mr.IncPlayCount(playedMediaFile.ID, time.Now())).To(Succeed())
+		})
+
+		AfterEach(func() {
+			_ = mr.Delete(playedMediaFile.ID)
 		})
 
 		It("returns only songs with at least one play", func() {
 			// Go through the REST filter map (not a direct call to recentlyPlayedFilter) so this
 			// test actually exercises the "recently_played" filter registration in mediaFileFilter().
-			res, err := repo.(model.ResourceRepository).ReadAll(rest.QueryOptions{
+			res, err := mr.(model.ResourceRepository).ReadAll(rest.QueryOptions{
 				Sort:    "play_date",
 				Order:   "desc",
 				Filters: map[string]any{"recently_played": "true"},
@@ -1105,7 +1108,7 @@ var _ = Describe("MediaRepository", func() {
 				ids = append(ids, mf.ID)
 				Expect(mf.PlayCount).To(BeNumerically(">", 0))
 			}
-			Expect(ids).To(ContainElement(playedID))
+			Expect(ids).To(ContainElement(playedMediaFile.ID))
 		})
 	})
 })
