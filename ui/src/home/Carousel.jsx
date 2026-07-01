@@ -21,6 +21,10 @@ const useStyles = makeStyles({
     display: 'flex',
     gap: '16px',
     overflowX: 'auto',
+    // Keep horizontal overscroll inside the carousel so swiping past the
+    // start/end doesn't chain to the browser's back/forward navigation
+    // (e.g. the macOS two-finger swipe-to-go-back gesture).
+    overscrollBehaviorX: 'contain',
     scrollBehavior: 'smooth',
     scrollSnapType: 'x proximity',
     paddingBottom: '8px',
