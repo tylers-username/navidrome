@@ -7,9 +7,17 @@ import ChevronRightIcon from '@material-ui/icons/ChevronRight'
 const useStyles = makeStyles({
   root: {
     position: 'relative',
+    // Grid with a minmax(0, 1fr) track lets the scroller shrink below its
+    // intrinsic (all-cards-wide) size. Without this, the flex scroller's
+    // width propagates up to react-admin's content column (a flex item with
+    // the default min-width: auto), which refuses to shrink and overflows the
+    // page horizontally instead of scrolling internally.
+    display: 'grid',
+    gridTemplateColumns: 'minmax(0, 1fr)',
     '&:hover $chevron': { opacity: 1 },
   },
   scroller: {
+    minWidth: 0,
     display: 'flex',
     gap: '16px',
     overflowX: 'auto',
