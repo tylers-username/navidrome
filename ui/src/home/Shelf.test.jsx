@@ -13,24 +13,62 @@ vi.mock('react-admin', () => ({
 vi.mock('./Carousel', () => ({
   Carousel: ({ children }) => <div data-testid="carousel">{children}</div>,
 }))
+vi.mock('./HomeCard', () => ({
+  HomeCardSkeleton: ({ variant }) => (
+    <div data-testid="skeleton" data-variant={variant} />
+  ),
+}))
 
 describe('Shelf', () => {
   beforeEach(() => vi.clearAllMocks())
 
   const renderCard = (record) => <div key={record.id}>{record.name}</div>
 
-  it('returns null while loading', () => {
+  it('shows the header and skeleton cards while loading', () => {
     mockUseGetList.mockReturnValue({ ids: [], data: {}, loaded: false })
-    const { container } = render(
-      <Shelf title="Recent" resource="album" sort={{}} filter={{}} renderCard={renderCard} />,
+    render(
+      <Shelf
+        title="Recent"
+        resource="album"
+        sort={{}}
+        filter={{}}
+        renderCard={renderCard}
+      />,
     )
-    expect(container).toBeEmptyDOMElement()
+    // Title renders immediately (it comes from props, not the pending query),
+    // and the shelf reserves space with skeleton cards instead of collapsing.
+    expect(screen.getByText('Recent')).toBeInTheDocument()
+    expect(screen.getAllByTestId('skeleton').length).toBeGreaterThan(0)
+  })
+
+  it('renders circle skeletons when variant is circle', () => {
+    mockUseGetList.mockReturnValue({ ids: [], data: {}, loaded: false })
+    render(
+      <Shelf
+        title="Artists"
+        resource="artist"
+        sort={{}}
+        filter={{}}
+        variant="circle"
+        renderCard={renderCard}
+      />,
+    )
+    expect(screen.getAllByTestId('skeleton')[0]).toHaveAttribute(
+      'data-variant',
+      'circle',
+    )
   })
 
   it('returns null when loaded but empty', () => {
     mockUseGetList.mockReturnValue({ ids: [], data: {}, loaded: true })
     const { container } = render(
-      <Shelf title="Recent" resource="album" sort={{}} filter={{}} renderCard={renderCard} />,
+      <Shelf
+        title="Recent"
+        resource="album"
+        sort={{}}
+        filter={{}}
+        renderCard={renderCard}
+      />,
     )
     expect(container).toBeEmptyDOMElement()
   })
@@ -38,7 +76,10 @@ describe('Shelf', () => {
   it('renders title, show-all link, and cards when populated', () => {
     mockUseGetList.mockReturnValue({
       ids: ['1', '2'],
-      data: { 1: { id: '1', name: 'Album One' }, 2: { id: '2', name: 'Album Two' } },
+      data: {
+        1: { id: '1', name: 'Album One' },
+        2: { id: '2', name: 'Album Two' },
+      },
       loaded: true,
     })
     render(
@@ -52,7 +93,10 @@ describe('Shelf', () => {
       />,
     )
     expect(screen.getByText('Recently Added')).toBeInTheDocument()
-    expect(screen.getByText('Show all')).toHaveAttribute('href', '/album/recentlyAdded')
+    expect(screen.getByText('Show all')).toHaveAttribute(
+      'href',
+      '/album/recentlyAdded',
+    )
     expect(screen.getByText('Album One')).toBeInTheDocument()
     expect(screen.getByText('Album Two')).toBeInTheDocument()
   })

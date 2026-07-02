@@ -2,6 +2,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import { Typography } from '@material-ui/core'
 import { makeStyles } from '@material-ui/core/styles'
+import Skeleton from '@material-ui/lab/Skeleton'
 import clsx from 'clsx'
 import subsonic from '../subsonic'
 import config from '../config'
@@ -101,6 +102,34 @@ export const HomeCard = ({
   return (
     <div className={classes.card} role="button" tabIndex={0} onClick={onClick}>
       {body}
+    </div>
+  )
+}
+
+// Placeholder rendered in a shelf while its data loads. It reuses HomeCard's
+// exact style classes so the loading state and the loaded card share identical
+// geometry — when the real card swaps in, nothing reflows. The Skeleton text
+// lines sit inside the same Typography boxes as the real title/subtitle, so
+// their heights match the loaded card line-for-line.
+export const HomeCardSkeleton = ({ variant = 'square' }) => {
+  const classes = useStyles()
+  const square = variant !== 'circle'
+  return (
+    <div className={classes.card} aria-hidden="true">
+      <div className={classes.artContainer}>
+        <Skeleton
+          variant={square ? 'rect' : 'circle'}
+          width="100%"
+          height="100%"
+          className={square ? classes.square : undefined}
+        />
+      </div>
+      <Typography className={classes.title}>
+        <Skeleton width="80%" />
+      </Typography>
+      <Typography className={classes.subtitle}>
+        <Skeleton width="55%" />
+      </Typography>
     </div>
   )
 }
