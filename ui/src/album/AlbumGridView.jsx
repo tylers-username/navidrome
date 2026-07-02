@@ -1,11 +1,5 @@
 import React from 'react'
-import {
-  GridList,
-  GridListTile,
-  Typography,
-  GridListTileBar,
-  useMediaQuery,
-} from '@material-ui/core'
+import { Typography, GridListTileBar, useMediaQuery } from '@material-ui/core'
 import { makeStyles } from '@material-ui/core/styles'
 import withWidth from '@material-ui/core/withWidth'
 import { Link } from 'react-router-dom'
@@ -19,7 +13,10 @@ import {
   ArtistLinkField,
   OverflowTooltip,
   useImageUrl,
+  InfiniteGrid,
+  InfiniteListFooter,
 } from '../common'
+import { useInfiniteListController } from '../common/useInfiniteListController'
 import config from '../config'
 import { DraggableTypes } from '../consts'
 import clsx from 'clsx'
@@ -211,37 +208,49 @@ const AlbumGridTile = ({ showArtist, record, basePath, ...props }) => {
   )
 }
 
-const LoadedAlbumGrid = ({ ids, data, basePath, width }) => {
+const LoadedAlbumGrid = ({ basePath, width }) => {
   const classes = useStyles()
-  const { filterValues } = useListContext()
+  const { resource, currentSort, filterValues } = useListContext()
+  const controller = useInfiniteListController({
+    resource,
+    sort: currentSort,
+    filter: filterValues,
+  })
+  const { ids, data, loaded, loadMore, hasMore, loadingMore, total } =
+    controller
   const isArtistView = !!(filterValues && filterValues.artist_id)
+
+  if (!loaded) return <Loading />
+
   return (
     <div className={classes.root}>
-      <GridList
-        component={'div'}
-        cellHeight={'auto'}
+      <InfiniteGrid
+        ids={ids}
         cols={getColsForWidth(width)}
         spacing={20}
-      >
-        {ids.map((id) => (
-          <GridListTile className={classes.gridListTile} key={id}>
-            <AlbumGridTile
-              record={data[id]}
-              basePath={basePath}
-              showArtist={!isArtistView}
-            />
-          </GridListTile>
-        ))}
-      </GridList>
+        loadMore={loadMore}
+        hasMore={hasMore}
+        loadingMore={loadingMore}
+        total={total}
+        renderItem={(id) => (
+          <AlbumGridTile
+            record={data[id]}
+            basePath={basePath}
+            showArtist={!isArtistView}
+          />
+        )}
+      />
+      <InfiniteListFooter
+        count={ids.length}
+        total={total}
+        loadingMore={loadingMore}
+        hasMore={hasMore}
+      />
     </div>
   )
 }
 
-const AlbumGridView = ({ albumListType, loaded, loading, ...props }) => {
-  const hide =
-    (loading && albumListType === 'random') || !props.data || !props.ids
-  return hide ? <Loading /> : <LoadedAlbumGrid {...props} />
-}
+const AlbumGridView = (props) => <LoadedAlbumGrid {...props} />
 
 const AlbumGridViewWithWidth = withWidth()(AlbumGridView)
 
