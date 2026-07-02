@@ -47,8 +47,6 @@ export const InfiniteGrid = ({
   spacing = 20,
   loadMore,
   hasMore,
-  loadingMore,
-  total,
   renderItem,
 }) => {
   const classes = useStyles({ cols, spacing })

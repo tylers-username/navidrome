@@ -106,13 +106,16 @@ const AlbumTableView = ({
     defaultOff: ['createdAt', 'size', 'mood'],
   })
 
-  const { resource, basePath, currentSort, setSort, filterValues } =
+  const { resource, basePath, currentSort, setSort, filterValues, filter } =
     useListContext()
   const { ids, data, loadMore, hasMore, loadingMore, total } =
     useInfiniteListController({
       resource,
       sort: currentSort,
-      filter: filterValues,
+      // Merge the permanent filter (e.g. the random-view `seed`) with the
+      // user's filterValues, matching react-admin's own getList filter, so
+      // every batch shares one stable ordering.
+      filter: { ...filterValues, ...filter },
     })
 
   const fields = [

@@ -210,11 +210,14 @@ const AlbumGridTile = ({ showArtist, record, basePath, ...props }) => {
 
 const LoadedAlbumGrid = ({ basePath, width }) => {
   const classes = useStyles()
-  const { resource, currentSort, filterValues } = useListContext()
+  const { resource, currentSort, filterValues, filter } = useListContext()
   const controller = useInfiniteListController({
     resource,
     sort: currentSort,
-    filter: filterValues,
+    // Merge the permanent filter (e.g. the random-view `seed`) with the
+    // user's filterValues, matching react-admin's own getList filter, so
+    // every batch shares one stable ordering.
+    filter: { ...filterValues, ...filter },
   })
   const { ids, data, loaded, loadMore, hasMore, loadingMore, total } =
     controller
