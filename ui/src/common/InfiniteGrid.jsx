@@ -59,7 +59,14 @@ export const InfiniteGrid = ({
       className={classes.scroller}
       totalCount={ids.length}
       components={components}
-      endReached={() => hasMore && loadMore()}
+      // Drive loading off the rendered range rather than endReached: under
+      // useWindowScroll, endReached can miss the page offset and never fire,
+      // but rangeChanged always reports the last mounted index. loadMore()
+      // is guarded (no-op while fetching / when !hasMore), so frequent calls
+      // during scroll are safe.
+      rangeChanged={({ endIndex }) => {
+        if (hasMore && endIndex >= ids.length - 1) loadMore()
+      }}
       itemContent={(index) => renderItem(ids[index])}
       overscan={600}
     />
