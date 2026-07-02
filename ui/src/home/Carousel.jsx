@@ -54,7 +54,10 @@ export const Carousel = ({ children }) => {
   const scroll = (direction) => {
     const el = ref.current
     if (el) {
-      el.scrollBy({ left: direction * el.clientWidth * 0.8, behavior: 'smooth' })
+      el.scrollBy({
+        left: direction * el.clientWidth * 0.8,
+        behavior: 'smooth',
+      })
     }
   }
 
