@@ -17,7 +17,7 @@ import {
   useVersion,
 } from 'react-admin'
 import FavoriteIcon from '@material-ui/icons/Favorite'
-import { withWidth } from '@material-ui/core'
+import { useMediaQuery, withWidth } from '@material-ui/core'
 import {
   List,
   Title,
@@ -187,6 +187,7 @@ const AlbumList = (props) => {
   const { width } = props
   const albumView = useSelector((state) => state.albumView)
   const [perPage, perPageOptions] = useAlbumsPerPage(width)
+  const isXsmall = useMediaQuery((theme) => theme.breakpoints.down('xs'))
   const location = useLocation()
   const version = useVersion()
   const refresh = useRefresh()
@@ -242,10 +243,14 @@ const AlbumList = (props) => {
         filters={<AlbumFilter />}
         perPage={perPage}
         pagination={
-          <AlbumListPagination
-            rowsPerPageOptions={perPageOptions}
-            albumListType={albumListType}
-          />
+          isXsmall && !albumView.grid ? (
+            <AlbumListPagination
+              rowsPerPageOptions={perPageOptions}
+              albumListType={albumListType}
+            />
+          ) : (
+            false
+          )
         }
         title={<AlbumListTitle albumListType={albumListType} />}
       >

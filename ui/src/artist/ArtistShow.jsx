@@ -6,7 +6,6 @@ import {
   useRecordContext,
   useShowContext,
   ReferenceManyField,
-  Pagination,
   Title as RaTitle,
 } from 'react-admin'
 import subsonic from '../subsonic'
@@ -88,7 +87,10 @@ const ArtistShowLayout = (props) => {
 
   const maxPerPage = 90
   let perPage = 0
-  let pagination = null
+  // No pagination bar is rendered here: AlbumGridView fetches albums via its
+  // own infinite list controller, so a react-admin <Pagination> element would
+  // be disconnected from what's actually displayed.
+  const pagination = null
 
   // Use the main credit count instead of total count, as this is a precise measure
   // of the number of albums where the artist is credited as an album artist OR
@@ -97,10 +99,6 @@ const ArtistShowLayout = (props) => {
 
   if (count > maxPerPage) {
     perPage = Math.trunc(maxPerPage / perPageOptions[0]) * perPageOptions[0]
-    const rowsPerPageOptions = [1, 2, 3].map((option) =>
-      Math.trunc(option * (perPage / 3)),
-    )
-    pagination = <Pagination rowsPerPageOptions={rowsPerPageOptions} />
   }
 
   return (
