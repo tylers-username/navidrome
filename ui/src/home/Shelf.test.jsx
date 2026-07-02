@@ -100,4 +100,33 @@ describe('Shelf', () => {
     expect(screen.getByText('Album One')).toBeInTheDocument()
     expect(screen.getByText('Album Two')).toBeInTheDocument()
   })
+
+  // useGetList returns `ids` (per-query) and `data` (a per-resource record pool)
+  // from independent store slices. The pool is pruned on a stale-while-revalidate
+  // cycle, on deletes, and by concurrent queries against the same resource — so an
+  // id in `ids` can have no record in `data`. The home page hits this because many
+  // shelves share the `album` resource. Missing records must be skipped, not passed
+  // to renderCard (which would crash on record.name).
+  it('skips ids whose record is missing from data', () => {
+    mockUseGetList.mockReturnValue({
+      ids: ['1', '2', '3'],
+      data: {
+        1: { id: '1', name: 'Album One' },
+        // id '2' is in ids but absent from the record pool
+        3: { id: '3', name: 'Album Three' },
+      },
+      loaded: true,
+    })
+    render(
+      <Shelf
+        title="Recently Added"
+        resource="album"
+        sort={{ field: 'recently_added', order: 'DESC' }}
+        filter={{}}
+        renderCard={renderCard}
+      />,
+    )
+    expect(screen.getByText('Album One')).toBeInTheDocument()
+    expect(screen.getByText('Album Three')).toBeInTheDocument()
+  })
 })

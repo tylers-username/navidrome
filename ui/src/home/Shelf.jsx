@@ -81,7 +81,14 @@ export const Shelf = ({
             ? Array.from({ length: SKELETON_COUNT }, (_, i) => (
                 <HomeCardSkeleton key={i} variant={variant} />
               ))
-            : ids.map((id) => renderCard(data[id]))}
+            : ids
+                // `data` is a per-resource record pool that react-admin prunes
+                // independently of each query's `ids` (stale-while-revalidate,
+                // deletes, other queries sharing the resource), so an id here can
+                // have no record. Skip those instead of passing undefined to
+                // renderCard, which would crash on record.name.
+                .filter((id) => data[id])
+                .map((id) => renderCard(data[id]))}
         </Carousel>
       </div>
     </Collapse>
