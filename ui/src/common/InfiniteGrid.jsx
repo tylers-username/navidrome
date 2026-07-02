@@ -1,6 +1,7 @@
 import React, { forwardRef } from 'react'
 import { VirtuosoGrid } from 'react-virtuoso'
 import { makeStyles } from '@material-ui/core/styles'
+import clsx from 'clsx'
 
 // VirtuosoGrid measures item/list geometry to window the grid, and only
 // supports a flex-wrap layout for that measurement (a CSS `display:grid`
@@ -22,14 +23,17 @@ const useStyles = makeStyles({
 })
 
 const buildComponents = (classes) => {
-  const List = forwardRef(({ style, children, ...props }, ref) => (
-    <div ref={ref} className={classes.list} style={style} {...props}>
+  // VirtuosoGrid passes its own `className` (virtuoso-grid-list / -item) via
+  // props. Merge it with ours instead of letting the spread clobber ours,
+  // otherwise our flex-wrap/width rules never apply and tiles render full-width.
+  const List = forwardRef(({ className, children, ...props }, ref) => (
+    <div ref={ref} className={clsx(classes.list, className)} {...props}>
       {children}
     </div>
   ))
   List.displayName = 'InfiniteGridList'
-  const Item = ({ children, ...props }) => (
-    <div className={classes.item} {...props}>
+  const Item = ({ className, children, ...props }) => (
+    <div className={clsx(classes.item, className)} {...props}>
       {children}
     </div>
   )
