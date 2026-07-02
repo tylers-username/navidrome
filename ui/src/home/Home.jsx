@@ -1,5 +1,6 @@
 import React from 'react'
 import { Title, useTranslate, linkToRecord } from 'react-admin'
+import { makeStyles } from '@material-ui/core/styles'
 import { useDispatch } from 'react-redux'
 import { Shelf } from './Shelf'
 import { HomeCard } from './HomeCard'
@@ -11,6 +12,18 @@ import {
 } from '../common'
 import { playTracks } from '../actions'
 import config from '../config'
+
+// Owns the vertical rhythm of the page: a fixed gap between shelves and equal
+// insets at the top and bottom. Keeping it here (rather than as per-shelf
+// margins) makes spacing independent of each shelf's Collapse wrapper.
+const useStyles = makeStyles({
+  shelves: {
+    display: 'flex',
+    flexDirection: 'column',
+    rowGap: 28,
+    padding: '28px 0',
+  },
+})
 
 const albumCard = (record) => (
   <HomeCard
@@ -81,6 +94,7 @@ const listLink = (resource, filter, sort) =>
   `&sort=${sort.field}&order=${sort.order}`
 
 const Home = () => {
+  const classes = useStyles()
   const translate = useTranslate()
   const dispatch = useDispatch()
   const renderArtist = artistCard(translate)
@@ -98,6 +112,7 @@ const Home = () => {
       resource: 'artist',
       sort: starredSort,
       filter: { starred: true },
+      variant: 'circle',
       renderCard: renderArtist,
     },
     config.enableFavourites && {
@@ -146,6 +161,7 @@ const Home = () => {
       resource: 'artist',
       sort: recentSort,
       filter: { recently_played: true },
+      variant: 'circle',
       renderCard: renderArtist,
     },
     {
@@ -169,9 +185,11 @@ const Home = () => {
   return (
     <>
       <Title title="Navidrome" />
-      {shelves.map((shelf) => (
-        <Shelf key={shelf.title} {...shelf} />
-      ))}
+      <div className={classes.shelves}>
+        {shelves.map((shelf) => (
+          <Shelf key={shelf.title} {...shelf} />
+        ))}
+      </div>
     </>
   )
 }
