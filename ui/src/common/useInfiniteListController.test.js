@@ -93,6 +93,46 @@ describe('useInfiniteListController', () => {
     expect(result.current.total).toBe(200)
   })
 
+  it('loadingMore stays false throughout the initial batch load', async () => {
+    getList.mockResolvedValueOnce({ data: makeRecords(0, 50), total: 120 })
+    const { result, waitForNextUpdate } = renderHook(() =>
+      useInfiniteListController(opts),
+    )
+    await waitForNextUpdate()
+    expect(result.current.loaded).toBe(true)
+    expect(result.all.every((r) => r.loadingMore === false)).toBe(true)
+  })
+
+  it('loadingMore is true only while a loadMore (page 2) fetch is in flight', async () => {
+    let resolveSecond
+    getList
+      .mockResolvedValueOnce({ data: makeRecords(0, 50), total: 120 })
+      .mockImplementationOnce(() => new Promise((res) => (resolveSecond = res)))
+    const { result, waitForNextUpdate } = renderHook(() =>
+      useInfiniteListController(opts),
+    )
+    await waitForNextUpdate()
+    expect(result.current.loadingMore).toBe(false)
+    act(() => result.current.loadMore())
+    expect(result.current.loadingMore).toBe(true)
+    act(() => resolveSecond({ data: makeRecords(50, 100), total: 120 }))
+    await waitForNextUpdate()
+    expect(result.current.loadingMore).toBe(false)
+  })
+
+  it('sets error and leaves loaded false when the first batch fails', async () => {
+    const err = new Error('boom')
+    getList.mockRejectedValueOnce(err)
+    const { result, waitForNextUpdate } = renderHook(() =>
+      useInfiniteListController(opts),
+    )
+    await waitForNextUpdate()
+    expect(result.current.error).toBe(err)
+    expect(result.current.loaded).toBe(false)
+    expect(result.current.loading).toBe(false)
+    expect(result.current.loadingMore).toBe(false)
+  })
+
   it('ignores a stale in-flight response after the key changes', async () => {
     let resolveFirst
     getList

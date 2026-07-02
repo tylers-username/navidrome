@@ -13,10 +13,11 @@ export const useInfiniteListController = ({
   const [state, setState] = useState(emptyState)
   const [loaded, setLoaded] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState(null)
 
   // Serialized key: any change resets accumulation.
-  const key = JSON.stringify({ resource, sort, filter, batchSize })
+  const key = JSON.stringify({ resource, sort, filter })
   const keyRef = useRef(key)
   const loadingRef = useRef(false)
   const stateRef = useRef(state)
@@ -27,6 +28,7 @@ export const useInfiniteListController = ({
       if (loadingRef.current) return
       loadingRef.current = true
       setLoading(true)
+      if (page > 1) setLoadingMore(true)
       dataProvider
         .getList(resource, {
           pagination: { page, perPage: batchSize },
@@ -57,6 +59,7 @@ export const useInfiniteListController = ({
           if (keyRef.current !== fetchKey) return
           loadingRef.current = false
           setLoading(false)
+          setLoadingMore(false)
         })
     },
     [dataProvider, resource, sort, filter, batchSize],
@@ -69,6 +72,7 @@ export const useInfiniteListController = ({
     setState(emptyState)
     setLoaded(false)
     setError(null)
+    setLoadingMore(false)
     fetchPage(1, key)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key])
@@ -86,7 +90,7 @@ export const useInfiniteListController = ({
     total: state.total,
     loaded,
     loading,
-    loadingMore: loading && state.page >= 1 && loaded,
+    loadingMore,
     error,
     hasMore,
     loadMore,
