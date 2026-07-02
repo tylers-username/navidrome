@@ -9,10 +9,9 @@ import {
   TableSortLabel,
 } from '@material-ui/core'
 import { useHistory } from 'react-router-dom'
-import { linkToRecord } from 'react-admin'
+import { linkToRecord, FieldTitle } from 'react-admin'
 
 const fieldKey = (field) => field.props.sortBy || field.props.source
-const fieldLabel = (field) => field.props.label || field.props.source
 
 // Always render a sticky header, regardless of caller-supplied props.
 const VirtuosoTable = forwardRef((props, ref) => (
@@ -66,6 +65,18 @@ export const InfiniteDatagrid = ({
     }
   }
 
+  const handleSort = (field) => {
+    const key = fieldKey(field)
+    const defaultOrder = field.props.sortByOrder || 'ASC'
+    const order =
+      currentSort.field === key
+        ? currentSort.order === 'ASC'
+          ? 'DESC'
+          : 'ASC'
+        : defaultOrder
+    setSort(key, order)
+  }
+
   const header = () => (
     <TableRow>
       {fields.map((field, i) => {
@@ -81,12 +92,20 @@ export const InfiniteDatagrid = ({
                     ? currentSort.order.toLowerCase()
                     : 'asc'
                 }
-                onClick={() => setSort(key)}
+                onClick={() => handleSort(field)}
               >
-                {fieldLabel(field)}
+                <FieldTitle
+                  label={field.props.label}
+                  source={field.props.source}
+                  resource={resource}
+                />
               </TableSortLabel>
             ) : (
-              fieldLabel(field)
+              <FieldTitle
+                label={field.props.label}
+                source={field.props.source}
+                resource={resource}
+              />
             )}
           </TableCell>
         )
@@ -115,7 +134,9 @@ export const InfiniteDatagrid = ({
       fixedHeaderContent={header}
       itemContent={itemContent}
       context={{ data, rowClassName }}
-      endReached={() => hasMore && loadMore()}
+      rangeChanged={({ endIndex }) => {
+        if (hasMore && endIndex >= ids.length - 1) loadMore()
+      }}
       overscan={600}
       aria-label={`${resource} list`}
     />
