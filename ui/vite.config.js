@@ -43,6 +43,15 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './src/setupTests.js',
     css: true,
+    server: {
+      deps: {
+        // react-virtuoso ships an .mjs build whose extensionless
+        // `react/jsx-runtime` import can't be resolved by Node's native ESM
+        // resolver; forcing it through Vite's transform pipeline (which
+        // resolves it correctly) avoids "Cannot find module" failures.
+        inline: ['react-virtuoso'],
+      },
+    },
     reporters: ['verbose'],
     // reporters: ['default', 'hanging-process'],
     coverage: {
