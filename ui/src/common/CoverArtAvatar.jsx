@@ -4,20 +4,19 @@ import { makeStyles } from '@material-ui/core/styles'
 import clsx from 'clsx'
 import config from '../config'
 import subsonic from '../subsonic'
-import { useImageUrl } from './useImageUrl'
+import { coverPlaceholderColor } from './coverPlaceholder'
 
-const useStyles = makeStyles({
+const useStyles = makeStyles((theme) => ({
   avatar: {
     width: '55px',
     height: '55px',
-  },
-  avatarEmpty: {
-    backgroundColor: 'transparent',
+    // Neutral placeholder while the native lazy image loads.
+    backgroundColor: coverPlaceholderColor(theme),
   },
   square: {
     borderRadius: '4px',
   },
-})
+}))
 
 export const CoverArtAvatar = ({
   record: recordProp,
@@ -30,21 +29,17 @@ export const CoverArtAvatar = ({
   const url = record
     ? subsonic.getCoverArtUrl(record, config.uiCoverArtSize, square)
     : null
-  const { imgUrl } = useImageUrl(url)
   if (!record) return null
   return (
     <Avatar
-      src={imgUrl || undefined}
+      src={url || undefined}
       variant={variant}
-      className={clsx(
-        classes.avatar,
-        square && classes.square,
-        !imgUrl && classes.avatarEmpty,
-      )}
+      className={clsx(classes.avatar, square && classes.square)}
+      imgProps={{ loading: 'lazy' }}
       alt={record.name}
     >
-      {/* Empty child prevents default person icon while loading */}
-      {!imgUrl && <span />}
+      {/* Empty child prevents default person icon over the neutral background */}
+      <span />
     </Avatar>
   )
 }

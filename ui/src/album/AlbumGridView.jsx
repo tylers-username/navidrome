@@ -12,7 +12,7 @@ import {
   PlayButton,
   ArtistLinkField,
   OverflowTooltip,
-  useImageUrl,
+  CoverImage,
   InfiniteGrid,
   InfiniteListFooter,
 } from '../common'
@@ -99,14 +99,9 @@ const useCoverStyles = makeStyles({
     overflow: 'hidden',
   },
   cover: {
-    display: 'inline-block',
     width: '100%',
     objectFit: 'contain',
     height: (props) => props.height,
-    transition: 'opacity 0.3s ease-in-out',
-  },
-  coverLoading: {
-    opacity: 0,
   },
 })
 
@@ -136,17 +131,15 @@ const Cover = withContentRect('bounds')(({
   )
 
   const url = subsonic.getCoverArtUrl(record, config.uiCoverArtSize, true)
-  const { imgUrl, loading: imageLoading } = useImageUrl(url)
 
   return (
     <div ref={measureRef} className={classes.coverContainer}>
-      <div ref={dragAlbumRef}>
-        <img
-          src={imgUrl || undefined}
-          alt={record.name}
-          className={`${classes.cover} ${imageLoading ? classes.coverLoading : ''}`}
-        />
-      </div>
+      <CoverImage
+        ref={dragAlbumRef}
+        src={url}
+        alt={record.name}
+        imgClassName={classes.cover}
+      />
     </div>
   )
 })

@@ -8,7 +8,7 @@ vi.mock('../subsonic', () => ({
 }))
 vi.mock('../config', () => ({ default: { uiCoverArtSize: 300 } }))
 vi.mock('../common', () => ({
-  useImageUrl: vi.fn(() => ({ imgUrl: 'http://example/art.png', loading: false })),
+  CoverImage: ({ src, alt }) => <img src={src} alt={alt} />,
   OverflowTooltip: ({ children }) => children,
 }))
 vi.mock('react-router-dom', () => ({

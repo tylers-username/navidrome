@@ -14,12 +14,7 @@ import {
   UrlField,
   useTranslate,
 } from 'react-admin'
-import {
-  List,
-  useImageUrl,
-  ToggleFieldsMenu,
-  useSelectedFields,
-} from '../common'
+import { List, ToggleFieldsMenu, useSelectedFields } from '../common'
 import subsonic from '../subsonic'
 import { StreamField } from './StreamField'
 import { setTrack } from '../actions'
@@ -85,11 +80,21 @@ const CoverArtField = ({ record }) => {
   const directUrl = record?.uploadedImage
     ? subsonic.getCoverArtUrl(record, 40, true)
     : null
-  const { imgUrl } = useImageUrl(directUrl)
   if (!record) return null
-  const src = imgUrl || RADIO_PLACEHOLDER_IMAGE
   return (
-    <Avatar src={src} variant="rounded" style={avatarStyle} alt={record.name} />
+    <Avatar
+      src={directUrl || RADIO_PLACEHOLDER_IMAGE}
+      variant="rounded"
+      style={avatarStyle}
+      alt={record.name}
+      imgProps={{
+        loading: 'lazy',
+        // Fall back to the bundled placeholder if the uploaded image fails.
+        onError: (e) => {
+          e.target.src = RADIO_PLACEHOLDER_IMAGE
+        },
+      }}
+    />
   )
 }
 CoverArtField.defaultProps = { label: '' }
