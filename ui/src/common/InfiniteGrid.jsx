@@ -2,13 +2,23 @@ import React, { forwardRef } from 'react'
 import { VirtuosoGrid } from 'react-virtuoso'
 import { makeStyles } from '@material-ui/core/styles'
 
+// VirtuosoGrid measures item/list geometry to window the grid, and only
+// supports a flex-wrap layout for that measurement (a CSS `display:grid`
+// container collapses its cells to full width). We reproduce the original
+// MUI GridList look with flex-wrap: each item is `100/cols` of the row
+// (minus the inter-item gaps), which matches `getColsForWidth`.
 const useStyles = makeStyles({
-  list: (props) => ({
-    display: 'grid',
-    gridTemplateColumns: `repeat(${props.cols}, 1fr)`,
-    gap: props.spacing,
-  }),
   scroller: { margin: '20px' },
+  list: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: (props) => `${props.spacing}px`,
+  },
+  item: {
+    boxSizing: 'border-box',
+    width: (props) =>
+      `calc((100% - ${(props.cols - 1) * props.spacing}px) / ${props.cols})`,
+  },
 })
 
 const buildComponents = (classes) => {
@@ -18,7 +28,12 @@ const buildComponents = (classes) => {
     </div>
   ))
   List.displayName = 'InfiniteGridList'
-  const Item = ({ children, ...props }) => <div {...props}>{children}</div>
+  const Item = ({ children, ...props }) => (
+    <div className={classes.item} {...props}>
+      {children}
+    </div>
+  )
+  Item.displayName = 'InfiniteGridItem'
   return { List, Item }
 }
 
