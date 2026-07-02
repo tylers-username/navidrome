@@ -1,17 +1,14 @@
 import React, { useMemo } from 'react'
 import {
-  Datagrid,
-  DatagridBody,
-  DatagridRow,
   DateField,
   NumberField,
   TextField,
   FunctionField,
+  useListContext,
 } from 'react-admin'
 import { useMediaQuery } from '@material-ui/core'
 import FavoriteBorderIcon from '@material-ui/icons/FavoriteBorder'
 import { makeStyles } from '@material-ui/core/styles'
-import { useDrag } from 'react-dnd'
 import {
   ArtistLinkField,
   CoverArtAvatar,
@@ -22,9 +19,11 @@ import {
   RatingField,
   useSelectedFields,
   SizeField,
+  InfiniteDatagrid,
+  InfiniteListFooter,
+  useInfiniteListController,
 } from '../common'
 import config from '../config'
-import { DraggableTypes } from '../consts'
 import clsx from 'clsx'
 
 const useStyles = makeStyles({
@@ -56,35 +55,6 @@ const useStyles = makeStyles({
     visibility: 'hidden',
   },
 })
-
-const AlbumDatagridRow = (props) => {
-  const { record, className } = props
-  const classes = useStyles()
-  const [, dragAlbumRef] = useDrag(
-    () => ({
-      type: DraggableTypes.ALBUM,
-      item: { albumIds: [record?.id] },
-      options: { dropEffect: 'copy' },
-    }),
-    [record],
-  )
-  const computedClasses = clsx(
-    className,
-    classes.row,
-    record.missing && classes.missingRow,
-  )
-  return (
-    <DatagridRow ref={dragAlbumRef} {...props} className={computedClasses} />
-  )
-}
-
-const AlbumDatagridBody = (props) => (
-  <DatagridBody {...props} row={<AlbumDatagridRow />} />
-)
-
-const AlbumDatagrid = (props) => (
-  <Datagrid {...props} body={<AlbumDatagridBody />} />
-)
 
 const AlbumTableView = ({
   hasShow,
@@ -136,6 +106,38 @@ const AlbumTableView = ({
     defaultOff: ['createdAt', 'size', 'mood'],
   })
 
+  const { resource, basePath, currentSort, setSort, filterValues } =
+    useListContext()
+  const { ids, data, loadMore, hasMore, loadingMore, total } =
+    useInfiniteListController({
+      resource,
+      sort: currentSort,
+      filter: filterValues,
+    })
+
+  const fields = [
+    <CoverArtAvatar
+      key="cover"
+      source="id"
+      variant="square"
+      sortable={false}
+    />,
+    <TextField key="name" source="name" />,
+    ...columns,
+    <AlbumContextMenu
+      key="ctx"
+      source="starred_at"
+      sortByOrder="DESC"
+      sortable={config.enableFavourites}
+      className={classes.contextMenu}
+      label={
+        config.enableFavourites && (
+          <FavoriteBorderIcon fontSize="small" className={classes.columnIcon} />
+        )
+      }
+    />,
+  ]
+
   return isXsmall ? (
     <SimpleList
       primaryText={(r) => r.name}
@@ -172,25 +174,31 @@ const AlbumTableView = ({
       {...rest}
     />
   ) : (
-    <AlbumDatagrid rowClick={'show'} classes={{ row: classes.row }} {...rest}>
-      <CoverArtAvatar source="id" variant="square" />
-      <TextField source="name" />
-      {columns}
-      <AlbumContextMenu
-        source={'starred_at'}
-        sortByOrder={'DESC'}
-        sortable={config.enableFavourites}
-        className={classes.contextMenu}
-        label={
-          config.enableFavourites && (
-            <FavoriteBorderIcon
-              fontSize={'small'}
-              className={classes.columnIcon}
-            />
-          )
+    <>
+      <InfiniteDatagrid
+        resource={resource}
+        basePath={basePath}
+        rowClick={'show'}
+        ids={ids}
+        data={data}
+        loadMore={loadMore}
+        hasMore={hasMore}
+        loadingMore={loadingMore}
+        total={total}
+        currentSort={currentSort}
+        setSort={setSort}
+        fields={fields}
+        rowClassName={(record) =>
+          clsx(classes.row, record?.missing && classes.missingRow)
         }
       />
-    </AlbumDatagrid>
+      <InfiniteListFooter
+        count={ids.length}
+        total={total}
+        loadingMore={loadingMore}
+        hasMore={hasMore}
+      />
+    </>
   )
 }
 
