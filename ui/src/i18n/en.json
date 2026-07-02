@@ -536,7 +536,8 @@
       "page_rows_per_page": "Items per page:",
       "next": "Next",
       "prev": "Prev",
-      "skip_nav": "Skip to content"
+      "skip_nav": "Skip to content",
+      "infinite_loaded": "%{count} of %{total} loaded"
     },
     "notification": {
       "updated": "Element updated |||| %{smart_count} elements updated",
